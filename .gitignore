@@ -1,0 +1,23 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Vendor directory
+/vendor/
+
+# Goland project files
+.idea/
+
+# Environment variables
+.env
+.env.*
+
+# macOS system files
+.DS_Store
+
+.k8s
