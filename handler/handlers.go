@@ -15,6 +15,7 @@ import (
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("[signup 요청 들어옴]")
 	var req struct {
+		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -41,7 +42,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`INSERT INTO users (email, password_hash) VALUES ($1, $2)`, req.Email, hash)
+	_, err = config.DB.Exec(`INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)`, req.Name, req.Email, hash)
 	if err != nil {
 		config.ResponseError(w, http.StatusUnauthorized, "중복되는 이메일", err.Error())
 		return
@@ -49,6 +50,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 문제 없을 시
 	config.ResponseOK(w, http.StatusCreated, "회원가입이 성공적으로 완료되었습니다.", "")
+	log.Printf("[signup 요청 정상 작동함. 메일: %s]", req.Email)
 }
 
 // 로그인 핸들러
