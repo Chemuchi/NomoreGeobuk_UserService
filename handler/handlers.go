@@ -49,7 +49,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 문제 없을 시
-	config.ResponseOK(w, http.StatusCreated, "회원가입이 성공적으로 완료되었습니다.", "")
+	config.ResponseOK(w, http.StatusCreated, "회원가입이 성공적으로 완료되었습니다.", "mail: "+req.Email+", name: "+req.Name)
 	log.Printf("[signup 요청 정상 작동함. 메일: %s]", req.Email)
 }
 
