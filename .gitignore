@@ -20,4 +20,6 @@
 # macOS system files
 .DS_Store
 
-.k8s
+# Helm Chart
+.k8s/postgres.yaml
+.k8s/secret.yaml
