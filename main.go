@@ -29,9 +29,9 @@ func main() {
 
 	mux.HandleFunc("/api/signup", handler.SignUpHandler)
 	mux.HandleFunc("/api/signin", handler.SignInHandler)
+	mux.HandleFunc("/api/profile", handler.ProfileHandler)
 
 	if err := http.ListenAndServe(":8080", enableCORS(mux)); err != nil {
 		log.Fatal(err)
 	}
-	http.ListenAndServe(":8080", enableCORS(mux))
 }

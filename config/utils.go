@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -38,6 +39,25 @@ func GenerateJWT(userID string) (string, error) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+}
+
+func ParseJWT(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if uid, ok := claims["user_id"].(string); ok {
+			return uid, nil
+		}
+	}
+	return "", fmt.Errorf("invalid token")
 }
 
 // 응답 관련 로직

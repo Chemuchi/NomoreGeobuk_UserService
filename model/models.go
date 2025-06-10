@@ -5,3 +5,8 @@ type User struct {
 	Email        string
 	PasswordHash string
 }
+
+type Profile struct {
+	UserID       string
+	ProfileImage string
+}
