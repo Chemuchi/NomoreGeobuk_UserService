@@ -84,7 +84,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user model.User
-	row := config.DB.QueryRow(`SELECT id, password_hash FROM users WHERE email=$1`, req.Email)
+	row := config.DB.QueryRow(`SELECT user_id, password_hash FROM users WHERE email=$1`, req.Email)
 	if err := row.Scan(&user.ID, &user.PasswordHash); err != nil {
 		if err == sql.ErrNoRows {
 			config.ResponseError(w, http.StatusUnauthorized, "유효하지 않은 이메일", "")
