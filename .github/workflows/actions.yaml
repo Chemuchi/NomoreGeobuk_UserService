@@ -27,7 +27,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: $ {{ secrets.DOCKERHUB_USERNAME }}/capstone_userauth:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/capstone_userauth:latest
           platforms: linux/amd64
 
   deploy:
