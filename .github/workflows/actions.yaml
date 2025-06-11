@@ -1,8 +1,7 @@
 name: actions.yaml
 on:
   push:
-    branches:
-      - "master"
+    branches: [ master ]
 
 jobs:
   build:
@@ -24,7 +23,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 📤 Build and Push Docker Image
-        uses: docker build --platform linux/amd64 -t ${{ secret.DOCKERHUB_USERNAME }}/capstone_userauth:latest . --push
+        uses: docker/build-push-actions@v5
+        with:
+          context: .
+          push: true
+          tags: $ {{ secrets.DOCKERHUB_USERNAME }}/capstone_userauth:latest
+          platforms: linux/amd64
 
   deploy:
     runs-on: ubuntu-latest
