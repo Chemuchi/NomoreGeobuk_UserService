@@ -70,10 +70,10 @@ func ResponseError(w http.ResponseWriter, status int, message string, error stri
 	})
 }
 
-func ResponseOK(w http.ResponseWriter, status int, message string, result string) {
+func ResponseOK(w http.ResponseWriter, status int, message string, result interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": message,
 		"result":  result,
 	})

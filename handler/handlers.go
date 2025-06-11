@@ -81,8 +81,8 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user model.User
-	row := config.DB.QueryRow(`SELECT user_id, password_hash FROM users WHERE email=$1`, req.Email)
-	if err := row.Scan(&user.ID, &user.PasswordHash); err != nil {
+	row := config.DB.QueryRow(`SELECT user_id, name, password_hash FROM users WHERE email=$1`, req.Email)
+	if err := row.Scan(&user.ID, &user.Name, &user.PasswordHash); err != nil {
 		if err == sql.ErrNoRows {
 			config.ResponseError(w, http.StatusUnauthorized, "유효하지 않은 이메일", "")
 			log.Println("[signin 요청 실패: 유효하지 않는 이메일]")
@@ -107,7 +107,13 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// 문제 없을 시
 	log.Println("[signin 요청 정상 작동 완료. 메일 : " + req.Email + "]")
-	config.ResponseOK(w, http.StatusOK, "로그인 성공 ["+req.Email+"]", token)
+	config.ResponseOK(w, http.StatusOK, "로그인 성공 ["+req.Email+"]", map[string]string{
+		"uuid":  user.ID,
+		"name":  user.Name, //result.name
+		"token": token,
+	})
+	// 프론트가 잘 못하겠다고 하면 아래 사용
+	//config.ResponseOK(w, http.StatusOK, user.Name, token)
 }
 
 // 프로필 저장 및 조회 핸들러
