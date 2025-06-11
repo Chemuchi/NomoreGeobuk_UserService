@@ -27,21 +27,21 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: DB_HOST
+            - name: USERSERVICE_DB_HOST
               value: "postgres"
-            - name: DB_PORT
+            - name: USERSERVICE_DB_PORT
               value: "5432"
-            - name: DB_USER
+            - name: USERSERVICE_DB_USER
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: DB_USER
-            - name: DB_PASSWORD
+            - name: USERSERVICE_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: DB_PASSWORD
-            - name: DB_NAME
+            - name: USERSERVICE_DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
