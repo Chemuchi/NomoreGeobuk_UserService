@@ -1,14 +1,14 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"os"
 )
 
-var DB *sql.DB
+var DB *sqlx.DB
 
 func InitDB() {
 	// 환경변수 로드
@@ -22,7 +22,7 @@ func InitDB() {
 		host, port, user, password, name)
 
 	var err error
-	DB, err = sql.Open("postgres", dsn)
+	DB, err = sqlx.Open("pgx", dsn)
 	if err != nil {
 		panic("[DB 연결 안됨: " + err.Error() + "]")
 	}
@@ -39,7 +39,7 @@ func InitDB() {
 	checkTable(DB)
 }
 
-func checkTable(db *sql.DB) {
+func checkTable(db *sqlx.DB) {
 	query := `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users');`
 
 	var exists bool
