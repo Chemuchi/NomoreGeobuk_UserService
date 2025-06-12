@@ -40,7 +40,14 @@ go run .
 ```
 
 응답:
-- `201 Created` – 회원가입 성공
+- `201 Created` 
+  - ```json
+    {
+    "message": "회원가입이 성공적으로 완료되었습니다.",
+    "result": "mail: test@example.com, name: 테스트"
+    }
+    ``` 
+
 - `400 Bad Request` – 잘못된 입력 또는 비밀번호/이메일 형식 오류
 - `401 Unauthorized` – 이미 사용 중인 이메일
 
@@ -57,7 +64,17 @@ go run .
 ```
 
 응답:
-- `200 OK` – 로그인 성공. 응답의 `result` 필드에 JWT 토큰 반환
+- `200 OK`
+  - ```json
+    {
+    "message": "로그인 성공 [test@example.com]",
+    "result": {
+        "name": "테스트",
+        "token": "eyJhbGciOiJIUzI1NiasdAScxS6IkpXVCJ9.eyJleHAiOjE3NDk4MdsHsjMsInVzZXJfaWQiOiJmNjQ1NWM3Yi1lMjIzLTQ2MWYtOTAxYi0wZJhnKjkzMmY4MWIifQ.AcjpFSCwnFMcQQVfs4NMNRnMkDIItd_qOf42_XfviJA",
+        "uuid": "f6455c7b-e223-461f-901b-0d2a6932f81b"
+    }
+}
+    ``` 
 - `400 Bad Request` – 잘못된 입력
 - `401 Unauthorized` – 이메일 또는 비밀번호 오류
 
