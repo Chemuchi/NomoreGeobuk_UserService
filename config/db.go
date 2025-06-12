@@ -18,11 +18,11 @@ func InitDB() {
 	password := os.Getenv("USERSERVICE_DB_PASSWORD")
 	name := os.Getenv("USERSERVICE_DB_NAME")
 
-	DCS := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, name)
 
 	var err error
-	DB, err = sql.Open("postgres", DCS)
+	DB, err = sql.Open("postgres", dsn)
 	if err != nil {
 		panic("[DB 연결 안됨: " + err.Error() + "]")
 	}
