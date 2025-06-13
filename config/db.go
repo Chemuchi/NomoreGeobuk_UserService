@@ -24,18 +24,17 @@ func InitDB() {
 	var err error
 	DB, err = sqlx.Open("pgx", dsn)
 	if err != nil {
-		panic("[DB 연결 안됨: " + err.Error() + "]")
+		panic("[" + CallerName(1) + "] DB 연결 실패 : " + err.Error())
 	}
 
 	// 연결 테스트
-	log.Println("[DB 연결 테스트 중입니다..]")
+	log.Printf("[%s] DB 연결 테스트중..", CallerName(1))
 	err = DB.Ping()
 	if err != nil {
-		panic("[DB 연결 테스트 실패: " + err.Error() + "]")
+		panic("[" + CallerName(1) + "] DB 연결 테스트 실패 : " + err.Error())
 	}
 
-	log.Println("[DB 연결이 성공적으로 완료되었습니다.]")
-
+	log.Printf("[%s] DB 연결됨", CallerName(1))
 	checkTable(DB)
 }
 
@@ -45,11 +44,11 @@ func checkTable(db *sqlx.DB) {
 	var exists bool
 	err := db.QueryRow(query).Scan(&exists)
 	if err != nil {
-		log.Fatalf("[users 데이블 존재 여부 확인 실패 : %v]", err)
+		log.Fatalf("[%s] users 테이블 존재여부 확인 실패: %v", CallerName(1), err.Error())
 	}
 
 	if !exists {
-		log.Println("[users 테이블이 존재하지 않아 새로 생성합니다..]")
+		log.Printf("[%s] users 테이블이 없어 생성중..", CallerName(1))
 		createTableQuery := `
 		CREATE TABLE users (
 				user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,21 +60,21 @@ func checkTable(db *sqlx.DB) {
 
 		_, err := db.Exec(createTableQuery)
 		if err != nil {
-			log.Fatalf("[users 테이블 생성에 실패하였습니다. %v]", err)
+			log.Fatalf("[%s] users 테이블 존재여부 확인 실패: %v", CallerName(1), err.Error())
 		}
-		log.Println("[users 테이블 생성에 성공하였습니다.]")
+		log.Printf("[%s] users 테이블 생성 성공.", CallerName(1))
 	} else {
-		log.Println("[users 테이블이 이미 존재합니다.]")
+		log.Printf("[%s] users 테이블 존재함.", CallerName(1))
 	}
 	// profiles 테이블 확인
 	profileQuery := `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'profiles');`
 	err = db.QueryRow(profileQuery).Scan(&exists)
 	if err != nil {
-		log.Fatalf("[profiles 테이블 존재 여부 확인 실패 : %v]", err)
+		log.Fatalf("[%s] profiles 테이블 존재여부 확인 실패: %v", CallerName(1), err.Error())
 	}
 
 	if !exists {
-		log.Println("[profiles 테이블이 존재하지 않아 새로 생성합니다..]")
+		log.Printf("[%s] profiles 테이블이 없어 생성중..")
 		createProfileQuery := `
         CREATE TABLE profiles (
                 user_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
@@ -84,10 +83,10 @@ func checkTable(db *sqlx.DB) {
 
 		_, err := db.Exec(createProfileQuery)
 		if err != nil {
-			log.Fatalf("[profiles 테이블 생성에 실패하였습니다. %v]", err)
+			log.Fatalf("[%s] profiles 테이블 생성에 실패함: %v", err.Error())
 		}
-		log.Println("[profiles 테이블 생성에 성공하였습니다.]")
+		log.Printf("[%s] profiles 테이블 생성에 성공함.", CallerName(1))
 	} else {
-		log.Println("[profiles 테이블이 이미 존재합니다.]")
+		log.Printf("[%s] profiles 테이블이 이미 존재함", CallerName(1))
 	}
 }

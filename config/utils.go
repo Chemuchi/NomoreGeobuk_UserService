@@ -8,7 +8,15 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
+	"strings"
+	"sync"
 	"time"
+)
+
+var (
+	nameCache = map[uintptr]string{}
+	mu        sync.RWMutex
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
@@ -58,6 +66,34 @@ func ParseJWT(tokenString string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("invalid token")
+}
+
+func CallerName(skip int) string {
+	pc, _, _, ok := runtime.Caller(skip)
+	if !ok {
+		return "unknown"
+	}
+
+	mu.RLock()
+	if v, ok := nameCache[pc]; ok {
+		mu.RUnlock()
+		return v
+	}
+	mu.RUnlock()
+
+	fn := runtime.FuncForPC(pc)
+	full := fn.Name()
+
+	if idx := strings.LastIndex(full, "/"); idx != -1 {
+		full = full[idx+1:]
+	}
+
+	name := strings.Replace(full, ".", ":", 1) // 패키지명:함수명
+
+	mu.Lock()
+	nameCache[pc] = name
+	mu.Unlock()
+	return name
 }
 
 // 응답 관련 로직
