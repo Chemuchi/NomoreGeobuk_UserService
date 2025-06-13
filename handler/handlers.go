@@ -3,10 +3,16 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/google/uuid"
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
+
 	"user_auth/auth"
 	"user_auth/config"
 	"user_auth/model"
@@ -146,7 +152,13 @@ func UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		}
 		defer file.Close()
 
-		url, err := config.UploadToImgBB(file, header.Filename)
+		// 새로운 파일명 생성: avatar-(user_id)-(랜덤값).확장자
+		ext := filepath.Ext(header.Filename)
+		rand.Seed(time.Now().UnixNano())
+		randPart := rand.Int63()
+		newName := fmt.Sprintf("avatar-%s-%d%s", userID.String(), randPart, ext)
+
+		url, err := config.UploadToImgBB(file, newName)
 		if err != nil {
 			config.ResponseError(w, http.StatusInternalServerError, "ImgBB 업로드 실패", err.Error())
 			return
