@@ -3,29 +3,22 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"log"
-	"math/rand"
-	"net/http"
-	"path/filepath"
-	"strings"
-	"time"
-
 	"github.com/google/uuid"
-
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 	"user_auth/auth"
 	"user_auth/config"
 	"user_auth/model"
 )
 
-// 회원가입 핸들러
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	// 이하 예외 처리
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		config.ResponseError(w, http.StatusBadRequest, "유효하지 않는 입력", err.Error())
 		log.Printf("[%s] %v", config.CallerName(1), err)
@@ -113,88 +106,68 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	//config.ResponseOK(w, http.StatusOK, user.Name, token)
 }
 
-// 프로필 저장 및 조회 핸들러
-func GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(auth.CtxUserID).(uuid.UUID)
-
-	var profile struct {
-		Name         string `db:"name" json:"name"`
-		Email        string `db:"email" json:"email"`
-		ProfileImage string `db:"profile_image" json:"profile_image"`
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		GetProfile(w, r)
+	case http.MethodPost:
+		UpdateProfile(w, r)
+	default:
+		http.Error(w, "허용되지 않는 메소드", http.StatusMethodNotAllowed)
 	}
-
-	if err := config.DB.Get(&profile, `
-        SELECT u.name, u.email, COALESCE(p.profile_image,'') AS profile_image
-        FROM users u
-        LEFT JOIN profiles p ON p.user_id = u.user_id
-        WHERE u.user_id=$1`, userID); err != nil {
-		config.ResponseError(w, http.StatusInternalServerError, "DB 오류", err.Error())
-		return
-	}
-
-	config.ResponseOK(w, http.StatusOK, "프로필 조회 성공", profile)
-
 }
 
-func UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	uidVal := r.Context().Value(auth.CtxUserID)
-	userID, ok := uidVal.(uuid.UUID)
-	if !ok {
-		config.ResponseError(w, http.StatusUnauthorized, "토큰이 없거나 잘못됨", "")
+func UsersActivitiesHandler(w http.ResponseWriter, r *http.Request) {
+	uid := r.Context().Value(auth.CtxUserID).(uuid.UUID)
+	switch r.Method {
+	case http.MethodGet:
+		listUserActivities(w, r, uid)
+	default:
+		http.Error(w, "허용되지 않는 메소드", http.StatusMethodNotAllowed)
+	}
+}
+
+// GoalsHandler handles /api/goals for listing and creating goals
+func GoalsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		listGoals(w, r)
+	case http.MethodPost:
+		createGoal(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// GoalDetailHandler handles /api/goals/{id} and /api/goals/{id}/activities
+func GoalDetailHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/api/goals/")
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.NotFound(w, r)
 		return
 	}
-	// 1) multipart/form-data 파일 업로드 플로우
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
-		file, header, err := r.FormFile("image")
-		if err != nil {
-			config.ResponseError(w, http.StatusBadRequest, "이미지 파일 없음", err.Error())
-			return
+	goalID, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		config.ResponseError(w, http.StatusBadRequest, "invalid goal id", err.Error())
+		return
+	}
+
+	if len(parts) == 1 {
+		switch r.Method {
+		case http.MethodPut:
+			updateGoal(w, r, goalID)
+		case http.MethodDelete:
+			deleteGoal(w, r, goalID)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-		defer file.Close()
-
-		// 새로운 파일명 생성: avatar-(user_id)-(랜덤값).확장자
-		ext := filepath.Ext(header.Filename)
-		rand.Seed(time.Now().UnixNano())
-		randPart := rand.Int63()
-		newName := fmt.Sprintf("avatar-%s-%d%s", userID.String(), randPart, ext)
-
-		url, err := config.UploadToImgBB(file, newName)
-		if err != nil {
-			config.ResponseError(w, http.StatusInternalServerError, "ImgBB 업로드 실패", err.Error())
-			return
-		}
-
-		if _, err := config.DB.Exec(`
-            INSERT INTO profiles (user_id, profile_image)
-            VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE SET profile_image = EXCLUDED.profile_image`,
-			userID, url); err != nil {
-			config.ResponseError(w, http.StatusInternalServerError, "DB 업데이트 실패", err.Error())
-			return
-		}
-
-		config.ResponseOK(w, http.StatusOK, "프로필 이미지 업로드 성공", map[string]string{"profile_image": url})
-		log.Printf("[%s] 프로필 이미지 업데이트함 - %s", config.CallerName(1), userID)
 		return
 	}
 
-	var payload struct {
-		ProfileImage string `json:"profile_image"`
-	}
-	if decodeErr := json.NewDecoder(r.Body).Decode(&payload); decodeErr != nil || payload.ProfileImage == "" {
-		config.ResponseError(w, http.StatusBadRequest, "invalid payload", "")
+	if len(parts) == 2 && parts[1] == "activities" && r.Method == http.MethodPost {
+		completeActivity(w, r, goalID)
 		return
 	}
-
-	if _, err := config.DB.Exec(`
-        INSERT INTO profiles (user_id, profile_image)
-        VALUES ($1, $2)
-        ON CONFLICT (user_id) DO UPDATE SET profile_image = EXCLUDED.profile_image`,
-		userID, payload.ProfileImage); err != nil {
-		config.ResponseError(w, http.StatusInternalServerError, "DB 업데이트 실패", err.Error())
-		return
-	}
-
-	config.ResponseOK(w, http.StatusOK, "프로필 이미지 URL 업데이트 성공", map[string]string{"profile_image": payload.ProfileImage})
-	log.Printf("[%s] 프로필 이미지 업데이트함 - %s", config.CallerName(1), userID)
+	http.NotFound(w, r)
 }

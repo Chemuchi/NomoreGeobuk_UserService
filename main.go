@@ -31,23 +31,15 @@ func main() {
 	// 공개 엔드포인트
 	mux.HandleFunc("/api/signup", handler.SignUpHandler)
 	mux.HandleFunc("/api/signin", handler.SignInHandler)
-
-	// 보호 엔드포인트: Auth 미들웨어 → 실제 핸들러 내부에서 메서드 스위치
-	mux.Handle("/api/profile", auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetProfile(w, r)
-		case http.MethodPost:
-			handler.UpdateProfile(w, r)
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	})))
+	mux.Handle("/api/goals", auth.Middleware(http.HandlerFunc(handler.GoalsHandler)))
+	mux.Handle("/api/goals/", auth.Middleware(http.HandlerFunc(handler.GoalDetailHandler)))
+	mux.Handle("/api/profile", auth.Middleware(http.HandlerFunc(handler.ProfileHandler)))
+	mux.Handle("/api/activities", auth.Middleware(http.HandlerFunc(handler.UsersActivitiesHandler)))
 
 	// CORS 래핑
 	handlerWithCORS := enableCORS(mux)
 
-	log.Printf("[%s] :8080 에서 작동중..", config.CallerName(1))
+	log.Printf("[%s] :8080 에서 작동중..\n---------서버 동작중---------", config.CallerName(1))
 	if err := http.ListenAndServe(":8080", handlerWithCORS); err != nil {
 		log.Fatal(err)
 	}
